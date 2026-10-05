@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GDE Jester - Your 3D Trickster Assistant</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1a0f1a;
+            color: #d4af37;
+            font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+            overflow: hidden;
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.85) 100%);
+        }
+        header {
+            text-align: center;
+            padding: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9);
+        }
+        h1 {
+            margin: 0;
+            font-size: 3.5rem;
+            letter-spacing: 2px;
+            font-weight: normal;
+            border-bottom: 2px solid #d4af37;
+            display: inline-block;
+            padding-bottom: 10px;
+            color: #ff4d4d;
+        }
+        #chat-container {
+            margin-top: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: auto;
+        }
+        #chat-log {
+            width: 80%;
+            max-width: 600px;
+            height: 250px;
+            overflow-y: auto;
+            background: rgba(20, 10, 20, 0.75);
+            border: 2px solid #d4af37;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+            font-size: 1.1rem;
+        }
+        .message {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        .message.user { color: #fff; }
+        .message.jester { color: #ffca28; font-style: italic; }
+        .controls {
+            display: flex;
+            gap: 10px;
+            width: 80%;
+            max-width: 600px;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #d4af37;
+            color: #fff;
+            padding: 15px;
+            font-family: inherit;
+            font-size: 1.2rem;
+            border-radius: 8px;
+        }
+        button {
+            background: #d4af37;
+            color: #4a0e0e;
+            border: none;
+            padding: 15px 30px;
+            font-family: inherit;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #fff;
+            box-shadow: 0 0 20px #d4af37;
+            transform: scale(1.05);
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="ui-layer">
+        <header>
+            <h1>The Royal GDE Jester</h1>
+            <p style="color: #ffca28; font-size: 1.2rem;">Juggling Your 'Homework' Since 2026</p>
+        </header>
+        <div id="chat-container">
+            <div id="chat-log">
+                <div class="message jester">Ah, my liege! Welcome to the court. Toss me your most tedious errands, and watch the fool juggle them with grace!</div>
+            </div>
+            <div class="controls">
+                <input type="text" id="user-input" placeholder="Throw a task at the Jester...">
+                <button id="send-btn">Command</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Three.js Scene Setup (Jester & Juggling Balls)
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0x606060);
+        scene.add(ambientLight);
+        
+        const spotLight = new THREE.SpotLight(0xffca28, 2);
+        spotLight.position.set(0, 10, 10);
+        scene.add(spotLight);
+
+        // Jester Core (Abstract Head)
+        const jesterMat = new THREE.MeshStandardMaterial({ 
+            color: 0x8b0000,
+            metalness: 0.5,
+            roughness: 0.3,
+        });
+        const jesterCore = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2), jesterMat);
+        scene.add(jesterCore);
+        
+        // Jester Hat bells
+        const hatMat = new THREE.MeshStandardMaterial({ color: 0xffca28, metalness: 0.8 });
+        const bells = [];
+        for(let i=0; i<3; i++) {
+            const bell = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.5, 4), hatMat);
+            bell.position.set(Math.cos(i*2.1)*1.2, 1.5, Math.sin(i*2.1)*1.2);
+            bell.rotation.x = 2;
+            jesterCore.add(bell);
+        }
+
+        // Juggling Balls (GDE Homework)
+        const ballColors = [0x4285F4, 0xDB4437, 0xF4B400, 0x0F9D58]; // Google Colors
+        const balls = [];
+        for(let i=0; i<4; i++) {
+            const ballGeo = new THREE.SphereGeometry(0.4, 32, 32);
+            const ballMat = new THREE.MeshStandardMaterial({ 
+                color: ballColors[i],
+                emissive: ballColors[i],
+                emissiveIntensity: 0.2
+            });
+            const ball = new THREE.Mesh(ballGeo, ballMat);
+            scene.add(ball);
+            balls.push({ mesh: ball, offset: i * (Math.PI / 2), isSelected: false });
+        }
+
+        camera.position.z = 8;
+        camera.position.y = 1;
+
+        let clock = new THREE.Clock();
+        let isThinking = false;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let time = clock.getElapsedTime();
+            
+            // Wobble the jester head playfully
+            jesterCore.rotation.y = Math.sin(time) * 0.3;
+            jesterCore.rotation.z = Math.cos(time * 1.5) * 0.1;
+            
+            if (isThinking) {
+                jesterCore.position.y = Math.abs(Math.sin(time * 10)) * 0.2; // Bounce fast
+            } else {
+                jesterCore.position.y = Math.sin(time * 2) * 0.1; // Idle float
+            }
+
+            // Juggle pattern (Figure 8 / Lemniscate)
+            const speed = isThinking ? 4 : 1.5;
+            balls.forEach(b => {
+                const t = time * speed + b.offset;
+                
+                if (b.isSelected) {
+                    // Hover in front of the jester for inspection
+                    b.mesh.position.x = THREE.MathUtils.lerp(b.mesh.position.x, 0, 0.1);
+                    b.mesh.position.y = THREE.MathUtils.lerp(b.mesh.position.y, 0, 0.1);
+                    b.mesh.position.z = THREE.MathUtils.lerp(b.mesh.position.z, 3, 0.1);
+                    b.mesh.scale.set(1.5, 1.5, 1.5);
+                    b.mesh.material.emissiveIntensity = 0.8;
+                } else {
+                    // Normal juggling path
+                    const scale = 3;
+                    b.mesh.position.x = THREE.MathUtils.lerp(b.mesh.position.x, (scale * Math.sin(t)) / (1 + Math.cos(t) * Math.cos(t)), 0.1);
+                    b.mesh.position.y = THREE.MathUtils.lerp(b.mesh.position.y, (scale * Math.sin(t) * Math.cos(t)) / (1 + Math.cos(t) * Math.cos(t)) - 1.5, 0.1);
+                    b.mesh.position.z = THREE.MathUtils.lerp(b.mesh.position.z, 0, 0.1);
+                    b.mesh.scale.set(1, 1, 1);
+                    b.mesh.material.emissiveIntensity = 0.2;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const chatLog = document.getElementById('chat-log');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function addMessage(text, sender) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            div.textContent = text;
+            chatLog.appendChild(div);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = userInput.value.trim();
+            if(!text) return;
+            
+            addMessage(`You: ${text}`, 'user');
+            userInput.value = '';
+            
+            isThinking = true;
+            // Select a random ball (homework) to inspect
+            const selectedBall = balls[Math.floor(Math.random() * balls.length)];
+            selectedBall.isSelected = true;
+            
+            setTimeout(() => {
+                isThinking = false;
+                selectedBall.isSelected = false;
+                addMessage("Jester: Oh, another foolish errand for the king? Fear not, I shall toss it into the void... or your calendar!", 'jester');
+            }, 3000);
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
