@@ -201,3 +201,13 @@ my_env.tfvars
 
 # A2A Inspector
 tools/a2a-inspector/
+feedback_api.py
+.backups/
+
+# Scratch scripts. Several hardcode API keys, and this repo is public.
+/test_*.py
+/test_*.js
+/fix_*.py
+
+# The jester's real prompts. Deployed, never committed.
+app/prompts.py

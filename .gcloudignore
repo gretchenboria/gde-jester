@@ -1,0 +1,11 @@
+.git
+.gitignore
+.venv
+__pycache__
+.env
+.backups
+test_*.py
+test_*.js
+fix_*.py
+*.bak*
+mint_user_token.py
